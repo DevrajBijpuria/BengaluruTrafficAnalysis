@@ -8,7 +8,7 @@ An end-to-end streaming data platform for Bengaluru road traffic. Traffic events
 
 ## Architecture
 ![Architecture](docs/images/architecture.png)
-```mermaid
+
 
 
 | Layer | Tool | What it does |
