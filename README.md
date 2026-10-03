@@ -9,21 +9,7 @@ An end-to-end streaming data platform for Bengaluru road traffic. Traffic events
 ## Architecture
 ![Architecture](docs/images/architecture.png)
 ```mermaid
-flowchart LR
-    G["traffic_generator.py<br/>synthetic events (CSV)"] --> P["Kafka producer"]
-    P --> K[("Kafka topic<br/>traffic-events")]
-    K --> S["PySpark Structured Streaming<br/>clean · dedupe · 5-min windows"]
-    S -->|raw events, Parquet| S3R[("S3<br/>raw/traffic_events/")]
-    S -->|5-min metrics, Parquet| S3A[("S3<br/>aggregated/5min/")]
-    S3R --> SF1[("Snowflake<br/>RAW.RAW_TRAFFIC_DATA")]
-    S3A --> SF2[("Snowflake<br/>AGGREGATED.TRAFFIC_METRICS_5MIN")]
-    SF1 --> D["dbt<br/>staging → intermediate → marts"]
-    SF2 --> D
-    D --> BI["Power BI"]
-    A{{"Airflow 3<br/>every 5 min"}} -. COPY INTO .-> SF1
-    A -. COPY INTO .-> SF2
-    A -. dbt build .-> D
-```
+
 
 | Layer | Tool | What it does |
 |---|---|---|
