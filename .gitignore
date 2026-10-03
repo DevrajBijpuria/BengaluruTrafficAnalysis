@@ -1,0 +1,37 @@
+# secrets
+.env
+*.env
+!.env.example
+
+# data & generated output
+output/
+*.csv
+*.parquet
+*.jsonl
+
+# logs
+logs/
+*.log
+
+# dbt artifacts
+traffic/target/
+traffic/dbt_packages/
+traffic/logs/
+
+# airflow runtime
+airflow/logs/
+airflow/plugins/
+airflow/config/
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# misc
+*.bak
+.DS_Store
+traffic/README.md
+.user.yml

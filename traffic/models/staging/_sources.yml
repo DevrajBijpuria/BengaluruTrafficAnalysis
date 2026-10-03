@@ -1,0 +1,19 @@
+
+version: 2
+
+sources:
+  - name: raw
+    database: TRAFFIC
+    schema: RAW
+    description: "Raw traffic event data loaded from S3."
+    tables:
+      - name: RAW_TRAFFIC_DATA
+        description: "Cleaned event-level data for Bengaluru traffic."
+
+  - name: aggregated
+    database: TRAFFIC
+    schema: AGGREGATED
+    description: "Aggregated traffic metrics loaded from S3."
+    tables:
+      - name: TRAFFIC_METRICS_5MIN
+        description: "Traffic metrics aggregated into 5-minute windows."

@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/bengaluru/traffic_event/v1",
+  "title": "BengaluruTrafficEvent",
+  "description": "One SYNTHETIC traffic observation for one road segment over one observation interval. Produced by traffic_generator.py (data_source = synthetic_simulator). Not measured Bengaluru traffic data.",
+  "version": "1.0.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id", "event_timestamp", "area", "road_segment_id", "road_name", "latitude", "longitude",
+    "vehicle_count", "avg_speed_kmph", "occupancy_pct", "congestion_level", "weather", "incident_type",
+    "incident_duration_minutes", "is_weekend", "hour_of_day", "day_of_week", "data_source",
+    "generated_at", "anomaly_type"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}-[0-9]{3}_[0-9]{8}T[0-9]{6}$",
+      "description": "Deterministic unique key: <road_segment_id>_<event local time as YYYYMMDDTHHMMSS>. Stable across reruns, so it can be used as a MERGE / dedup key.",
+      "x-sql-type": "VARCHAR(32)"
+    },
+    "event_timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Start of the observation interval, ISO-8601 in Asia/Kolkata (+05:30), second precision.",
+      "x-sql-type": "TIMESTAMP_TZ"
+    },
+    "area": {
+      "type": "string",
+      "enum": ["Whitefield", "Electronic City", "Silk Board", "Outer Ring Road", "Marathahalli", "Hebbal", "Koramangala", "Indiranagar", "MG Road", "Yeshwanthpur"],
+      "description": "Bengaluru area the segment belongs to.",
+      "x-sql-type": "VARCHAR(32)"
+    },
+    "road_segment_id": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}-[0-9]{3}$",
+      "description": "Road segment key (<area_id>-<nnn>); joins to road_segments.csv.",
+      "x-sql-type": "VARCHAR(8)"
+    },
+    "road_name": {
+      "type": ["string", "null"],
+      "description": "Road name (denormalised from road_segments). Nullable only in Missing_Field anomalies.",
+      "x-sql-type": "VARCHAR(64)"
+    },
+    "latitude": {
+      "type": ["number", "null"],
+      "minimum": 12.7,
+      "maximum": 13.2,
+      "description": "Synthetic approximate segment latitude (WGS84, 6 dp).",
+      "x-sql-type": "NUMBER(9,6)"
+    },
+    "longitude": {
+      "type": ["number", "null"],
+      "minimum": 77.4,
+      "maximum": 77.9,
+      "description": "Synthetic approximate segment longitude (WGS84, 6 dp).",
+      "x-sql-type": "NUMBER(9,6)"
+    },
+    "vehicle_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Vehicles that passed the segment during the interval (all lanes, both directions). Never exceeds ceil(capacity_vehicles_per_minute * interval_seconds / 60).",
+      "x-sql-type": "INTEGER"
+    },
+    "avg_speed_kmph": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Mean speed over the interval (1 dp). Never exceeds the segment speed limit. 0 only during Road_Closure.",
+      "x-sql-type": "NUMBER(5,1)"
+    },
+    "occupancy_pct": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Share of time a detector is occupied (1 dp), derived from flow, speed and lane count.",
+      "x-sql-type": "NUMBER(5,1)"
+    },
+    "congestion_level": {
+      "type": "string",
+      "enum": ["Low", "Moderate", "High", "Severe"],
+      "description": "From congestion_score = 0.5*(1 - avg_speed/speed_limit)*100 + 0.5*occupancy_pct: <25 Low, <45 Moderate, <65 High, else Severe. Road_Closure is always Severe.",
+      "x-sql-type": "VARCHAR(10)"
+    },
+    "weather": {
+      "type": ["string", "null"],
+      "enum": ["Clear", "Cloudy", "Rain", "Heavy_Rain", null],
+      "description": "Simulated area-level weather during the interval.",
+      "x-sql-type": "VARCHAR(12)"
+    },
+    "incident_type": {
+      "type": "string",
+      "enum": ["None", "Accident", "Roadwork", "Vehicle_Breakdown", "Road_Closure"],
+      "description": "Active incident on the segment. Recovery periods after an incident report None but still show residual congestion.",
+      "x-sql-type": "VARCHAR(20)"
+    },
+    "incident_duration_minutes": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "description": "Total duration of the active incident in minutes (same value on every row of that incident); 0 when incident_type is None.",
+      "x-sql-type": "INTEGER"
+    },
+    "is_weekend": {
+      "type": "boolean",
+      "description": "True on Saturday and Sunday (local time).",
+      "x-sql-type": "BOOLEAN"
+    },
+    "hour_of_day": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 23,
+      "description": "Local (IST) hour of event_timestamp.",
+      "x-sql-type": "SMALLINT"
+    },
+    "day_of_week": {
+      "type": "string",
+      "enum": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+      "description": "Local (IST) day name of event_timestamp.",
+      "x-sql-type": "VARCHAR(9)"
+    },
+    "data_source": {
+      "type": "string",
+      "const": "synthetic_simulator",
+      "description": "Always synthetic_simulator. Marks every record as simulated.",
+      "x-sql-type": "VARCHAR(32)"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Simulated time the sensor emitted the event, ISO-8601 +05:30, millisecond precision. event_timestamp + interval + 0.2-5 s latency; much later for Delayed anomalies.",
+      "x-sql-type": "TIMESTAMP_TZ"
+    },
+    "anomaly_type": {
+      "type": "string",
+      "enum": ["None", "Duplicate", "Delayed", "Missing_Field", "Invalid_Value"],
+      "description": "Deliberately injected data-quality anomaly. None for clean records (the default for every record unless anomaly injection is enabled).",
+      "x-sql-type": "VARCHAR(16)"
+    }
+  },
+  "x-partitioning": {
+    "parquet": ["year", "month", "day", "area"],
+    "note": "Parquet output is Hive-partitioned (year=YYYY/month=MM/day=DD/area=<name>). Partition columns live in the directory path, not in the files."
+  }
+}
