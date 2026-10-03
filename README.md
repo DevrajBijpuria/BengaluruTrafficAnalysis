@@ -68,7 +68,9 @@ flowchart LR
 │   ├── dags/traffic.py             # traffic_build DAG
 │   ├── dbt_profiles/profiles.yml   # dbt profile, reads credentials from env vars
 │   └── .env.example                # template for airflow/.env
-└── docs/DATA_GENERATOR.md          # full generator documentation
+└── docs/
+    ├── DATA_GENERATOR.md           # full generator documentation
+    └── images/                     # Power BI screenshots
 ```
 
 ---
@@ -89,6 +91,25 @@ sources (RAW.RAW_TRAFFIC_DATA, AGGREGATED.TRAFFIC_METRICS_5MIN)
 
 - Each layer gets its own Snowflake schema (`staging`, `intermediate`, `marts`) through a custom `generate_schema_name` macro.
 - The singular test `traffic_event_ranges` checks latitude/longitude, non-negative counts and speeds, occupancy between 0 and 100, and `hour_of_day` between 0 and 23.
+
+---
+
+## Power BI dashboard
+
+The marts are loaded into Power BI as a star schema: two fact tables (`FACT_TRAFFIC_EVENTS` at event grain, `FACT_TRAFFIC_5MIN` at 5-minute window grain) share the conformed dimensions `DIM_DATE` and `DIM_ROAD_SEGMENT`, with `DIM_WEATHER` and `DIM_INCIDENT` on the event fact.
+
+![Power BI dashboard](docs/images/powerbi_dashboard.png)
+
+What the dashboard shows (7–11 July 2026 sample):
+- **57.1K** five-minute windows, **2.23M** vehicles, average speed **31.15 km/h**, average occupancy **14.14%**
+- Congestion split: **74.8% Low**, **20.4% High**, **4.8% Severe**
+- Clear morning and evening peaks in the congestion trend for every area
+- **Silk Board** (2.11) and **Hebbal** (2.07) have the highest average congestion rank; **MG Road** (1.16) has the lowest
+- **Hebbal** carries the most traffic (0.42M vehicles), followed by Silk Board and Outer Ring Road
+
+**Data model**
+
+![Power BI data model](docs/images/powerbi_data_model.png)
 
 ---
 
