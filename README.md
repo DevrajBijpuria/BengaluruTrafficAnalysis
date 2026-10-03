@@ -7,7 +7,7 @@ An end-to-end streaming data platform for Bengaluru road traffic. Traffic events
 ---
 
 ## Architecture
-
+![Architecture](docs/images/architecture.png)
 ```mermaid
 flowchart LR
     G["traffic_generator.py<br/>synthetic events (CSV)"] --> P["Kafka producer"]
